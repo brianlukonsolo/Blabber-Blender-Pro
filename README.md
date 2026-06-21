@@ -5,7 +5,7 @@
 <h1 align="center">🗣️ Blabber-Blender Pro</h1>
 
 <p align="center">
-  <strong>A premium text-to-speech workspace for pasted technical labs, notes, and training material.</strong>
+  <strong>A free, premium-feeling text-to-speech workspace for pasted technical labs, notes, and training material.</strong>
 </p>
 
 <p align="center">
