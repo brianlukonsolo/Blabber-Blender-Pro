@@ -124,6 +124,20 @@ function isEditableTarget(target) {
   )
 }
 
+function getPresetTooltip(key) {
+  return (
+    {
+      commands:
+        'Use slower, command-focused playback with technical pronunciation enabled.',
+      normal:
+        'Use plain reading with default speed and minimal technical expansion.',
+      skim: 'Read faster and skip code-like chunks for a quick pass through the material.',
+      technical:
+        'Use balanced technical reading with command splitting and clearer pronunciation.',
+    }[key] || 'Apply this reading preset.'
+  )
+}
+
 export default function App() {
   const saved = useMemo(loadSettings, [])
   const initialText = saved.text ?? ''
@@ -796,6 +810,7 @@ export default function App() {
             type="button"
             className="banner-close"
             aria-label="Dismiss"
+            data-tooltip="Dismiss this message."
             onClick={clearError}
           >
             x
@@ -804,7 +819,10 @@ export default function App() {
       )}
 
       <section className="topbar" aria-label="Reader setup">
-        <label className="toggle-row lab-toggle">
+        <label
+          className="toggle-row lab-toggle"
+          data-tooltip="Parse pasted text into sections, questions, commands, lists, and code-like chunks."
+        >
           <input
             type="checkbox"
             checked={labMode}
@@ -823,6 +841,7 @@ export default function App() {
               key={key}
               type="button"
               className={profile === key ? 'active' : ''}
+              data-tooltip={getPresetTooltip(key)}
               onClick={() => handlePreset(key)}
             >
               {preset.label}
@@ -867,23 +886,27 @@ export default function App() {
             <ActionButton
               icon={Wand2}
               label="Clean paste"
+              tooltip="Clean pasted text by removing duplicate labels, copied buttons, and other page clutter."
               onClick={handleCleanPaste}
               disabled={!text.trim()}
             />
             <ActionButton
               icon={ClipboardPaste}
               label="Paste"
+              tooltip="Paste text from your clipboard into the editor."
               onClick={handlePasteClipboard}
             />
             <ActionButton
               icon={Scissors}
               label="Selection"
+              tooltip="Read only the text currently selected in the editor."
               onClick={handleReadSelection}
               disabled={!selectedText.trim()}
             />
             <ActionButton
               icon={Play}
               label="Sample"
+              tooltip="Insert sample technical lab text so you can try the reader."
               onClick={() => {
                 cancel()
                 setText(SAMPLE_TEXT)
@@ -894,6 +917,7 @@ export default function App() {
             <ActionButton
               icon={Eraser}
               label="Clear"
+              tooltip="Clear the editor and reset reading progress."
               onClick={handleClear}
               disabled={!text}
             />
@@ -909,6 +933,7 @@ export default function App() {
               aria-selected={sideTab === 'playback'}
               aria-controls="panel-playback"
               className={sideTab === 'playback' ? 'active' : ''}
+              data-tooltip="Show voice, playback, diagnostics, and audio controls."
               onClick={() => setSideTab('playback')}
             >
               Playback
@@ -920,6 +945,7 @@ export default function App() {
               aria-selected={sideTab === 'sections'}
               aria-controls="panel-sections"
               className={sideTab === 'sections' ? 'active' : ''}
+              data-tooltip="Show parsed chunks so you can jump around the text."
               onClick={() => setSideTab('sections')}
             >
               Sections
@@ -950,12 +976,20 @@ export default function App() {
                   <IconButton
                     icon={SkipBack}
                     label="Previous chunk"
+                    tooltip="Move to the previous playable chunk."
                     onClick={handlePrevious}
                     disabled={!chunks.length}
                   />
                   <IconButton
                     icon={isSpeaking ? Pause : Play}
                     label={isSpeaking ? 'Pause' : isPaused ? 'Resume' : 'Read'}
+                    tooltip={
+                      isSpeaking
+                        ? 'Pause the current spoken chunk.'
+                        : isPaused
+                          ? 'Resume the paused spoken chunk.'
+                          : 'Read the selected chunk aloud.'
+                    }
                     onClick={handlePlayPause}
                     disabled={!supported || !chunks.length}
                     primary
@@ -963,6 +997,7 @@ export default function App() {
                   <IconButton
                     icon={Square}
                     label="Stop"
+                    tooltip="Stop speech and clear the active spoken snippet."
                     onClick={handleStop}
                     disabled={!isActive}
                     danger
@@ -970,12 +1005,14 @@ export default function App() {
                   <IconButton
                     icon={SkipForward}
                     label="Next chunk"
+                    tooltip="Move to the next playable chunk."
                     onClick={handleNext}
                     disabled={!chunks.length}
                   />
                   <IconButton
                     icon={Repeat2}
                     label="Repeat"
+                    tooltip="Replay the current chunk from the beginning."
                     onClick={handleRepeat}
                     disabled={!chunks.length}
                   />
@@ -984,31 +1021,37 @@ export default function App() {
                 <div className="option-grid playback-options">
                   <Toggle
                     label="Auto advance"
+                    tooltip="Automatically continue to the next playable chunk when the current one finishes."
                     checked={autoAdvance}
                     onChange={setAutoAdvance}
                   />
                   <Toggle
                     label="Split commands"
+                    tooltip="Treat command-like lines as their own chunks for clearer playback."
                     checked={splitCommands}
                     onChange={setSplitCommands}
                   />
                   <Toggle
                     label="Skip code blocks"
+                    tooltip="Exclude code-like chunks from playback while keeping them visible in Sections."
                     checked={skipCodeBlocks}
                     onChange={setSkipCodeBlocks}
                   />
                   <Toggle
                     label="Slow commands"
+                    tooltip="Read command and code chunks more slowly than regular prose."
                     checked={slowCommands}
                     onChange={setSlowCommands}
                   />
                   <Toggle
                     label="Spell technical text"
+                    tooltip="Expand IPs, paths, URLs, flags, hashes, and command flags for clearer speech."
                     checked={spellTechnical}
                     onChange={setSpellTechnical}
                   />
                   <Toggle
                     label="Redact secrets"
+                    tooltip="Avoid speaking likely flags, passwords, tokens, and secrets aloud."
                     checked={redactSecrets}
                     onChange={setRedactSecrets}
                   />
@@ -1021,6 +1064,8 @@ export default function App() {
                   microsoftOnly={microsoftOnly}
                   onToggleMicrosoftOnly={setMicrosoftOnly}
                   diagnostics={voiceDiagnostics}
+                  tooltip="Choose the browser voice used for speech playback."
+                  microsoftOnlyTooltip="Show only voices whose name or URI appears to be Microsoft-provided."
                 />
 
                 <div className="diagnostics-panel">
@@ -1037,6 +1082,7 @@ export default function App() {
                     <ActionButton
                       icon={Play}
                       label="Test selected"
+                      tooltip="Speak a short phrase with the selected voice and save whether it works."
                       onClick={handleTestSelectedVoice}
                       disabled={
                         !supported || !selectedVoice || diagnosticRun.running
@@ -1045,6 +1091,7 @@ export default function App() {
                     <ActionButton
                       icon={CheckCircle2}
                       label="Run all voices"
+                      tooltip="Audibly test every browser-reported voice and cache the results."
                       onClick={handleRunAllVoiceDiagnostics}
                       disabled={!supported || !voices.length || diagnosticRun.running}
                     />
@@ -1052,6 +1099,7 @@ export default function App() {
                       <ActionButton
                         icon={Square}
                         label="Stop test"
+                        tooltip="Stop the current voice diagnostics run."
                         onClick={handleStopVoiceDiagnostics}
                       />
                     )}
@@ -1091,6 +1139,7 @@ export default function App() {
                   <Slider
                     id="rate"
                     label="Speed"
+                    hint="speaking pace"
                     min={0.5}
                     max={2}
                     step={0.05}
@@ -1102,6 +1151,7 @@ export default function App() {
                   <Slider
                     id="pitch"
                     label="Pitch"
+                    hint="voice tone"
                     min={0}
                     max={2}
                     step={0.05}
@@ -1112,6 +1162,7 @@ export default function App() {
                   <Slider
                     id="volume"
                     label="Volume"
+                    hint="speech loudness"
                     min={0}
                     max={1}
                     step={0.05}
@@ -1146,6 +1197,7 @@ export default function App() {
                         <button
                           key={chunk.id}
                           type="button"
+                          data-tooltip="Select this parsed chunk. If speech is active, it starts reading this chunk."
                           className={[
                             'chunk-item',
                             active ? 'active' : '',
@@ -1200,16 +1252,22 @@ function StatusBadge({ supported, status }) {
   return <span className={`badge ${current.cls}`}>{current.label}</span>
 }
 
-function ActionButton({ icon: Icon, label, ...props }) {
+function ActionButton({ icon: Icon, label, tooltip, ...props }) {
   return (
-    <button type="button" className="action-btn" {...props}>
+    <button
+      type="button"
+      className="action-btn"
+      data-tooltip={tooltip}
+      aria-label={tooltip ? `${label}. ${tooltip}` : label}
+      {...props}
+    >
       <Icon size={16} aria-hidden="true" />
       <span>{label}</span>
     </button>
   )
 }
 
-function IconButton({ icon: Icon, label, primary, danger, ...props }) {
+function IconButton({ icon: Icon, label, tooltip, primary, danger, ...props }) {
   return (
     <button
       type="button"
@@ -1218,8 +1276,8 @@ function IconButton({ icon: Icon, label, primary, danger, ...props }) {
         primary ? 'primary' : '',
         danger ? 'danger' : '',
       ].join(' ')}
-      title={label}
-      aria-label={label}
+      data-tooltip={tooltip || label}
+      aria-label={tooltip ? `${label}. ${tooltip}` : label}
       {...props}
     >
       <Icon size={19} aria-hidden="true" />
@@ -1228,9 +1286,9 @@ function IconButton({ icon: Icon, label, primary, danger, ...props }) {
   )
 }
 
-function Toggle({ label, checked, onChange }) {
+function Toggle({ label, tooltip, checked, onChange }) {
   return (
-    <label className="toggle-row">
+    <label className="toggle-row" data-tooltip={tooltip}>
       <input
         type="checkbox"
         checked={checked}

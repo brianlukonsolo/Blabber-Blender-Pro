@@ -16,6 +16,8 @@ export default function VoiceSelect({
   microsoftOnly,
   onToggleMicrosoftOnly,
   diagnostics = {},
+  tooltip,
+  microsoftOnlyTooltip,
 }) {
   const filtered = useMemo(
     () => (microsoftOnly ? voices.filter(isMicrosoftVoice) : voices),
@@ -45,8 +47,10 @@ export default function VoiceSelect({
   return (
     <div className="field">
       <div className="field-header">
-        <label htmlFor="voice">Voice</label>
-        <label className="toggle-row compact">
+        <label htmlFor="voice" data-tooltip={tooltip}>
+          Voice
+        </label>
+        <label className="toggle-row compact" data-tooltip={microsoftOnlyTooltip}>
           <input
             type="checkbox"
             checked={microsoftOnly}

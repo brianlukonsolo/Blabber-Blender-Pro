@@ -30,7 +30,7 @@ export default function Slider({
             <button
               type="button"
               className="icon-reset"
-              title="Reset to default"
+              data-tooltip={`Reset ${label.toLowerCase()} to its default value.`}
               aria-label={`Reset ${label.toLowerCase()}`}
               onClick={() => onChange(defaultValue)}
             >
