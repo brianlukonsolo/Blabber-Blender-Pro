@@ -59,20 +59,6 @@ Diagnostics are based on Web Speech events such as `onstart`, `onend`,
 `onerror`, and timeout behavior. This confirms browser playback behavior, but
 it cannot prove your speakers or headphones were audible.
 
-## 🚀 Quick Start
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Open the local URL Vite prints, usually:
-
-```text
-http://127.0.0.1:5173/
-```
-
 ## 🐳 Docker
 
 From the project root:
@@ -102,6 +88,22 @@ docker compose up -d --force-recreate frontend
 
 Restarting an existing container reuses the image it was created from. Rebuild
 when frontend source files change.
+
+## 🚀 Local Development
+
+Use this only when you want Vite's local development server with hot reload:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open the local URL Vite prints, usually:
+
+```text
+http://127.0.0.1:5173/
+```
 
 ## 🎧 Browser Voices
 
