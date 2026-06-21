@@ -635,6 +635,23 @@ option {
   line-height: 1.35;
 }
 
+.diagnostic-filter {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.diagnostic-filter label {
+  color: var(--text-strong);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.diagnostic-filter select {
+  min-height: 38px;
+  font-size: 13px;
+}
+
 .diagnostic-actions {
   display: flex;
   flex-wrap: wrap;

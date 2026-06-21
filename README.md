@@ -41,7 +41,7 @@ does not bundle voices or send your text to a speech server.
 | 🧠 Technical Speech | Improves pronunciation for IPs, URLs, paths, hashes, flags, and common tools. |
 | 🗂️ Sections Tab | Browse parsed chunks, jump between sections, and track completed items. |
 | 🎙️ Voice Picker | Shows every browser-reported voice with diagnostics-aware grouping. |
-| 🩺 Voice Diagnostics | Test one voice or all voices; cache confirmed, failed, and timed-out results. |
+| 🩺 Voice Diagnostics | Test one voice, test only untested voices, filter by language, or retest all voices; cache confirmed, failed, and timed-out results. |
 | 🔐 Redaction | Optionally avoids speaking flags, tokens, passwords, and secrets aloud. |
 | 💾 Resume State | Saves text, settings, selected voice, progress, and completed chunks locally. |
 | ⌨️ Shortcuts | Use Space, S, N, P, R, `[`, and `]` when focus is outside an input. |
@@ -58,6 +58,12 @@ The app can audibly test voices exposed by your browser and group them as:
 Diagnostics are based on Web Speech events such as `onstart`, `onend`,
 `onerror`, and timeout behavior. This confirms browser playback behavior, but
 it cannot prove your speakers or headphones were audible.
+
+When you run diagnostics again, Blabber-Blender Pro skips voices that already
+have cached results. You can also limit diagnostics to a base language, so
+English includes every English locale such as `en-US`, `en-GB`, and `en-CA`.
+Use **Retest all** when you explicitly want to refresh every voice result in the
+selected language group.
 
 ## ✅ Prerequisites
 

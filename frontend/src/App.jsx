@@ -16,7 +16,12 @@ import {
 import { useSpeechSynthesis } from './hooks/useSpeechSynthesis'
 import VoiceSelect from './components/VoiceSelect'
 import Slider from './components/Slider'
-import { getVoiceDiagnostic, getVoiceKey, isKnownWorkingVoice } from './utils/voices'
+import {
+  describeLang,
+  getVoiceDiagnostic,
+  getVoiceKey,
+  isKnownWorkingVoice,
+} from './utils/voices'
 import {
   cleanLabText,
   getChunkTypeLabel,
@@ -138,6 +143,10 @@ function getPresetTooltip(key) {
   )
 }
 
+function getVoiceBaseLanguage(voice) {
+  return (voice.lang || 'unknown').split('-')[0].toLowerCase() || 'unknown'
+}
+
 export default function App() {
   const saved = useMemo(loadSettings, [])
   const initialText = saved.text ?? ''
@@ -195,10 +204,13 @@ export default function App() {
   const [activeSnippet, setActiveSnippet] = useState(null)
   const [sideTab, setSideTab] = useState('playback')
   const [tooltip, setTooltip] = useState(null)
+  const [diagnosticLang, setDiagnosticLang] = useState('all')
   const [voiceDiagnostics, setVoiceDiagnostics] = useState(loadVoiceDiagnostics)
   const [diagnosticRun, setDiagnosticRun] = useState({
     current: '',
+    message: '',
     running: false,
+    skipped: 0,
     tested: 0,
     total: 0,
   })
@@ -229,6 +241,36 @@ export default function App() {
         : null,
     [selectedVoice, voiceDiagnostics],
   )
+  const diagnosticLanguages = useMemo(() => {
+    const counts = new Map()
+    for (const voice of voices) {
+      const key = getVoiceBaseLanguage(voice)
+      counts.set(key, (counts.get(key) || 0) + 1)
+    }
+
+    return [...counts.entries()]
+      .map(([baseLang, count]) => ({
+        count,
+        lang: baseLang,
+        label:
+          baseLang === 'unknown' ? 'Unknown language' : describeLang(baseLang),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [voices])
+  const diagnosticVoices = useMemo(
+    () =>
+      diagnosticLang === 'all'
+        ? voices
+        : voices.filter((voice) => getVoiceBaseLanguage(voice) === diagnosticLang),
+    [diagnosticLang, voices],
+  )
+  const diagnosticLangLabel = useMemo(() => {
+    if (diagnosticLang === 'all') return 'all languages'
+    return (
+      diagnosticLanguages.find((item) => item.lang === diagnosticLang)?.label ||
+      diagnosticLang
+    )
+  }, [diagnosticLang, diagnosticLanguages])
 
   const isSpeaking = status === 'speaking'
   const isPaused = status === 'paused'
@@ -628,9 +670,26 @@ export default function App() {
   )
 
   const runVoiceDiagnostics = useCallback(
-    async (targetVoices) => {
-      const list = targetVoices.filter(Boolean)
-      if (!supported || !list.length || diagnosticRun.running) return
+    async (targetVoices, { retest = false } = {}) => {
+      const candidates = targetVoices.filter(Boolean)
+      const list = retest
+        ? candidates
+        : candidates.filter((voice) => !voiceDiagnostics[getVoiceKey(voice)])
+      const skipped = candidates.length - list.length
+      if (!supported || diagnosticRun.running) return
+      if (!list.length) {
+        setDiagnosticRun({
+          current: '',
+          message: candidates.length
+            ? 'All selected voices already have cached diagnostic results.'
+            : 'No voices are available to test.',
+          running: false,
+          skipped,
+          tested: 0,
+          total: 0,
+        })
+        return
+      }
 
       cancel()
       clearError()
@@ -640,7 +699,9 @@ export default function App() {
       diagnosticAbortRef.current = abort
       setDiagnosticRun({
         current: '',
+        message: '',
         running: true,
+        skipped,
         tested: 0,
         total: list.length,
       })
@@ -650,7 +711,9 @@ export default function App() {
         const voice = list[index]
         setDiagnosticRun({
           current: voice.name,
+          message: '',
           running: true,
+          skipped,
           tested: index,
           total: list.length,
         })
@@ -661,7 +724,9 @@ export default function App() {
         recordVoiceDiagnostic(voice, result)
         setDiagnosticRun({
           current: voice.name,
+          message: '',
           running: true,
+          skipped,
           tested: index + 1,
           total: list.length,
         })
@@ -674,6 +739,9 @@ export default function App() {
       setDiagnosticRun((run) => ({
         ...run,
         current: '',
+        message: run.skipped
+          ? `Finished. Skipped ${run.skipped} cached voice result${run.skipped === 1 ? '' : 's'}.`
+          : 'Finished.',
         running: false,
       }))
     },
@@ -684,16 +752,21 @@ export default function App() {
       recordVoiceDiagnostic,
       supported,
       testVoice,
+      voiceDiagnostics,
     ],
   )
 
   const handleTestSelectedVoice = useCallback(() => {
-    if (selectedVoice) runVoiceDiagnostics([selectedVoice])
+    if (selectedVoice) runVoiceDiagnostics([selectedVoice], { retest: true })
   }, [runVoiceDiagnostics, selectedVoice])
 
   const handleRunAllVoiceDiagnostics = useCallback(() => {
-    runVoiceDiagnostics(voices)
-  }, [runVoiceDiagnostics, voices])
+    runVoiceDiagnostics(diagnosticVoices)
+  }, [diagnosticVoices, runVoiceDiagnostics])
+
+  const handleRetestAllVoiceDiagnostics = useCallback(() => {
+    runVoiceDiagnostics(diagnosticVoices, { retest: true })
+  }, [diagnosticVoices, runVoiceDiagnostics])
 
   const handleStopVoiceDiagnostics = useCallback(() => {
     if (diagnosticAbortRef.current) {
@@ -703,6 +776,7 @@ export default function App() {
     setDiagnosticRun((run) => ({
       ...run,
       current: '',
+      message: 'Voice diagnostics stopped.',
       running: false,
     }))
   }, [supported])
@@ -1140,6 +1214,27 @@ export default function App() {
                       </p>
                     </div>
                   </div>
+                  <div className="diagnostic-filter">
+                    <label
+                      htmlFor="diagnostic-language"
+                      data-tooltip="Limit diagnostics to voices in a specific browser-reported language."
+                    >
+                      Test language
+                    </label>
+                    <select
+                      id="diagnostic-language"
+                      value={diagnosticLang}
+                      onChange={(event) => setDiagnosticLang(event.target.value)}
+                      disabled={diagnosticRun.running || !voices.length}
+                    >
+                      <option value="all">All languages ({voices.length})</option>
+                      {diagnosticLanguages.map((item) => (
+                        <option key={item.lang} value={item.lang}>
+                          {item.label} ({item.lang}-*, {item.count})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="diagnostic-actions">
                     <ActionButton
                       icon={Play}
@@ -1152,10 +1247,25 @@ export default function App() {
                     />
                     <ActionButton
                       icon={CheckCircle2}
-                      label="Run all voices"
-                      tooltip="Audibly test every browser-reported voice and cache the results."
+                      label="Test untested"
+                      tooltip="Test only untested voices in the selected diagnostic language."
                       onClick={handleRunAllVoiceDiagnostics}
-                      disabled={!supported || !voices.length || diagnosticRun.running}
+                      disabled={
+                        !supported ||
+                        !diagnosticVoices.length ||
+                        diagnosticRun.running
+                      }
+                    />
+                    <ActionButton
+                      icon={Repeat2}
+                      label="Retest all"
+                      tooltip="Ignore cached results and retest every voice in the selected diagnostic language."
+                      onClick={handleRetestAllVoiceDiagnostics}
+                      disabled={
+                        !supported ||
+                        !diagnosticVoices.length ||
+                        diagnosticRun.running
+                      }
                     />
                     {diagnosticRun.running && (
                       <ActionButton
@@ -1168,10 +1278,15 @@ export default function App() {
                   </div>
                   <p className="diagnostic-status">
                     {diagnosticRun.running
-                      ? `Testing ${diagnosticRun.tested}/${diagnosticRun.total}: ${diagnosticRun.current}`
-                      : selectedVoiceDiagnostic
-                        ? `Selected voice: ${describeDiagnostic(selectedVoiceDiagnostic)}`
-                        : 'Selected voice has not been tested yet.'}
+                      ? `Testing ${diagnosticRun.tested}/${diagnosticRun.total}: ${diagnosticRun.current}${
+                          diagnosticRun.skipped
+                            ? ` (${diagnosticRun.skipped} cached skipped)`
+                            : ''
+                        } in ${diagnosticLangLabel}`
+                      : diagnosticRun.message ||
+                        (selectedVoiceDiagnostic
+                          ? `Selected voice: ${describeDiagnostic(selectedVoiceDiagnostic)}`
+                          : 'Selected voice has not been tested yet.')}
                   </p>
                 </div>
 
