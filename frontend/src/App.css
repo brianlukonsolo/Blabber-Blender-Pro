@@ -871,70 +871,49 @@ input[type="range"]::-moz-range-thumb {
   position: relative;
 }
 
-[data-tooltip]::before,
-[data-tooltip]::after {
-  position: absolute;
-  left: 50%;
-  z-index: 30;
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, 6px);
-  transition: opacity 0.14s ease, transform 0.14s ease;
-}
-
-[data-tooltip]::before {
-  content: attr(data-tooltip);
-  bottom: calc(100% + 10px);
+.global-tooltip {
+  position: fixed;
+  z-index: 2147483647;
   width: max-content;
-  max-width: min(280px, 80vw);
-  padding: 8px 10px;
+  max-width: min(300px, calc(100vw - 28px));
+  padding: 9px 11px;
   color: #fffaf2;
   background: var(--text-strong);
   border: 1px solid rgba(21, 19, 15, 0.2);
   border-radius: 8px;
-  box-shadow: 0 12px 28px rgba(44, 32, 20, 0.18);
+  box-shadow: 0 18px 38px rgba(44, 32, 20, 0.26);
   font-size: 12px;
   font-weight: 700;
   line-height: 1.35;
   text-align: center;
   white-space: normal;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
 }
 
-[data-tooltip]::after {
+.global-tooltip::after {
   content: "";
-  bottom: calc(100% + 4px);
+  position: absolute;
+  left: 50%;
   width: 10px;
   height: 10px;
   background: var(--text-strong);
   border-right: 1px solid rgba(21, 19, 15, 0.2);
   border-bottom: 1px solid rgba(21, 19, 15, 0.2);
-  transform: translate(-50%, 6px) rotate(45deg);
+  transform: translateX(-50%) rotate(45deg);
 }
 
-[data-tooltip]:hover::before,
-[data-tooltip]:hover::after,
-[data-tooltip]:focus-visible::before,
-[data-tooltip]:focus-visible::after,
-[data-tooltip]:focus-within::before,
-[data-tooltip]:focus-within::after {
-  opacity: 1;
+.global-tooltip.top::after {
+  bottom: -6px;
 }
 
-[data-tooltip]:hover::before,
-[data-tooltip]:focus-visible::before,
-[data-tooltip]:focus-within::before {
+.global-tooltip.bottom {
   transform: translate(-50%, 0);
 }
 
-[data-tooltip]:hover::after,
-[data-tooltip]:focus-visible::after,
-[data-tooltip]:focus-within::after {
-  transform: translate(-50%, 0) rotate(45deg);
-}
-
-[data-tooltip=""]::before,
-[data-tooltip=""]::after {
-  display: none;
+.global-tooltip.bottom::after {
+  top: -6px;
+  transform: translateX(-50%) rotate(225deg);
 }
 
 button:focus-visible,

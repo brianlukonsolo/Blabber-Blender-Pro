@@ -15,6 +15,10 @@
   <img alt="Docker" src="https://img.shields.io/badge/Docker-ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
 </p>
 
+<p align="center">
+  <img src="./logo/Screenshot.png" alt="Blabber-Blender Pro application screenshot" width="900" />
+</p>
+
 ---
 
 ## ✨ What It Does
@@ -89,6 +93,16 @@ To stop the container:
 docker compose down
 ```
 
+To force Docker to rebuild the Vite production bundle inside the container:
+
+```bash
+docker compose build --no-cache frontend
+docker compose up -d --force-recreate frontend
+```
+
+Restarting an existing container reuses the image it was created from. Rebuild
+when frontend source files change.
+
 ## 🎧 Browser Voices
 
 Available voices come from your browser and operating system.
@@ -120,7 +134,8 @@ works on your machine.
 ├── docker-compose.yml
 ├── README.md
 ├── logo/
-│   └── blabber_blender__pro_logo.png
+│   ├── blabber_blender__pro_logo.png
+│   └── Screenshot.png
 └── frontend/
     ├── Dockerfile
     ├── nginx.conf

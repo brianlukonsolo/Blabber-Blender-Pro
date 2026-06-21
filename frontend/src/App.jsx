@@ -194,6 +194,7 @@ export default function App() {
   const [selection, setSelection] = useState({ start: 0, end: 0 })
   const [activeSnippet, setActiveSnippet] = useState(null)
   const [sideTab, setSideTab] = useState('playback')
+  const [tooltip, setTooltip] = useState(null)
   const [voiceDiagnostics, setVoiceDiagnostics] = useState(loadVoiceDiagnostics)
   const [diagnosticRun, setDiagnosticRun] = useState({
     current: '',
@@ -251,6 +252,67 @@ export default function App() {
   useEffect(() => {
     autoAdvanceRef.current = autoAdvance
   }, [autoAdvance])
+
+  useEffect(() => {
+    const getTooltipTarget = (target) =>
+      target instanceof Element ? target.closest('[data-tooltip]') : null
+
+    const showTooltip = (target) => {
+      const value = target?.getAttribute('data-tooltip')
+      if (!value) return
+
+      const rect = target.getBoundingClientRect()
+      const preferredTop = rect.top - 12
+      const showBelow = preferredTop < 54
+      const x = Math.min(
+        Math.max(rect.left + rect.width / 2, 150),
+        window.innerWidth - 150,
+      )
+      const y = showBelow ? rect.bottom + 12 : preferredTop
+
+      setTooltip({
+        placement: showBelow ? 'bottom' : 'top',
+        text: value,
+        x,
+        y,
+      })
+    }
+
+    const onPointerOver = (event) => {
+      const target = getTooltipTarget(event.target)
+      if (target) showTooltip(target)
+    }
+    const onPointerOut = (event) => {
+      const target = getTooltipTarget(event.target)
+      if (!target) return
+      if (event.relatedTarget instanceof Node && target.contains(event.relatedTarget)) {
+        return
+      }
+      setTooltip(null)
+    }
+    const onFocusIn = (event) => {
+      const target = getTooltipTarget(event.target)
+      if (target) showTooltip(target)
+    }
+    const onFocusOut = () => setTooltip(null)
+    const onDismiss = () => setTooltip(null)
+
+    document.addEventListener('pointerover', onPointerOver)
+    document.addEventListener('pointerout', onPointerOut)
+    document.addEventListener('focusin', onFocusIn)
+    document.addEventListener('focusout', onFocusOut)
+    window.addEventListener('scroll', onDismiss, true)
+    window.addEventListener('resize', onDismiss)
+
+    return () => {
+      document.removeEventListener('pointerover', onPointerOver)
+      document.removeEventListener('pointerout', onPointerOut)
+      document.removeEventListener('focusin', onFocusIn)
+      document.removeEventListener('focusout', onFocusOut)
+      window.removeEventListener('scroll', onDismiss, true)
+      window.removeEventListener('resize', onDismiss)
+    }
+  }, [])
 
   useEffect(() => {
     try {
@@ -1237,6 +1299,7 @@ export default function App() {
         Voices come from your browser and operating system. Edge usually exposes
         the most Microsoft voices.
       </footer>
+      <TooltipLayer tooltip={tooltip} />
     </div>
   )
 }
@@ -1296,6 +1359,20 @@ function Toggle({ label, tooltip, checked, onChange }) {
       />
       <span>{label}</span>
     </label>
+  )
+}
+
+function TooltipLayer({ tooltip }) {
+  if (!tooltip) return null
+
+  return (
+    <div
+      className={`global-tooltip ${tooltip.placement}`}
+      style={{ left: tooltip.x, top: tooltip.y }}
+      role="tooltip"
+    >
+      {tooltip.text}
+    </div>
   )
 }
 

@@ -3,6 +3,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        BUILD_VERSION: blabber-blender-pro-local
     image: blabber-blender-pro-frontend:latest
     container_name: blabber-blender-pro
     ports:
@@ -11,7 +13,7 @@ services:
       - "8088:80"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
       interval: 30s
       timeout: 3s
       retries: 3
