@@ -59,6 +59,19 @@ Diagnostics are based on Web Speech events such as `onstart`, `onend`,
 `onerror`, and timeout behavior. This confirms browser playback behavior, but
 it cannot prove your speakers or headphones were audible.
 
+## ✅ Prerequisites
+
+Before running Blabber-Blender Pro, install Docker for Windows, macOS, or Linux:
+
+https://www.docker.com/get-started/
+
+Confirm Docker is available by either opening the dashboard user interface or by running the following CMD/Terminal commands:
+
+```bash
+docker --version
+docker compose version
+```
+
 ## 🐳 Docker
 
 From the project root:
