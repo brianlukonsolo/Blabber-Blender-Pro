@@ -1,0 +1,8 @@
+.idea/
+*.log
+
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+frontend/.vite-server*.log
