@@ -775,7 +775,7 @@ export default function App() {
           </span>
           <div>
             <h1>Blabber-Blender Pro</h1>
-            <p className="tagline">Lab speech workspace</p>
+            <p className="tagline">By Brian Lukonsolo</p>
             <p className="tagline-sub">Chunked speech for pasted technical labs.</p>
           </div>
         </div>
