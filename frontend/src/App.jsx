@@ -18,6 +18,7 @@ import VoiceSelect from './components/VoiceSelect'
 import Slider from './components/Slider'
 import {
   describeLang,
+  getVoiceBaseLanguage,
   getVoiceDiagnostic,
   getVoiceKey,
   isKnownWorkingVoice,
@@ -143,10 +144,6 @@ function getPresetTooltip(key) {
   )
 }
 
-function getVoiceBaseLanguage(voice) {
-  return (voice.lang || 'unknown').split('-')[0].toLowerCase() || 'unknown'
-}
-
 export default function App() {
   const saved = useMemo(loadSettings, [])
   const initialText = saved.text ?? ''
@@ -173,8 +170,8 @@ export default function App() {
   const [rate, setRate] = useState(saved.rate ?? DEFAULTS.rate)
   const [pitch, setPitch] = useState(saved.pitch ?? DEFAULTS.pitch)
   const [volume, setVolume] = useState(saved.volume ?? DEFAULTS.volume)
-  const [microsoftOnly, setMicrosoftOnly] = useState(
-    saved.microsoftOnly ?? false,
+  const [voiceLanguage, setVoiceLanguage] = useState(
+    saved.voiceLanguage ?? 'all',
   )
   const [labMode, setLabMode] = useState(saved.labMode ?? true)
   const [profile, setProfile] = useState(saved.profile ?? 'technical')
@@ -401,7 +398,7 @@ export default function App() {
       rate,
       pitch,
       volume,
-      microsoftOnly,
+      voiceLanguage,
       labMode,
       profile,
       splitCommands,
@@ -427,7 +424,6 @@ export default function App() {
     autoAdvance,
     completedChunkIds,
     labMode,
-    microsoftOnly,
     pitch,
     profile,
     rate,
@@ -438,6 +434,7 @@ export default function App() {
     splitCommands,
     text,
     textHash,
+    voiceLanguage,
     voiceURI,
     volume,
   ])
@@ -473,6 +470,11 @@ export default function App() {
       )
     },
     [chunks, findPlayableFrom, isPlayableChunk],
+  )
+
+  const getFirstPlayableIndex = useCallback(
+    () => findPlayableFrom(0, 1, true),
+    [findPlayableFrom],
   )
 
   const markCompleted = useCallback((chunkId) => {
@@ -524,10 +526,12 @@ export default function App() {
           if (reason !== 'completed') return
           markCompleted(chunk.id)
 
-          if (!autoAdvanceRef.current) return
           const nextIndex = findPlayableFrom(playableIndex, 1, false)
-          if (nextIndex != null) {
+          if (autoAdvanceRef.current && nextIndex != null) {
             window.setTimeout(() => playChunkRef.current?.(nextIndex), 80)
+          } else if (nextIndex == null) {
+            const firstIndex = getFirstPlayableIndex()
+            if (firstIndex != null) setActiveChunkIndex(firstIndex)
           }
         },
       })
@@ -537,6 +541,7 @@ export default function App() {
       buildSpeechText,
       chunks,
       findPlayableFrom,
+      getFirstPlayableIndex,
       getEffectiveRate,
       getPlayableIndex,
       markCompleted,
@@ -1197,11 +1202,11 @@ export default function App() {
                   voices={voices}
                   value={voiceURI}
                   onChange={setVoiceURI}
-                  microsoftOnly={microsoftOnly}
-                  onToggleMicrosoftOnly={setMicrosoftOnly}
+                  voiceLanguage={voiceLanguage}
+                  onVoiceLanguageChange={setVoiceLanguage}
                   diagnostics={voiceDiagnostics}
                   tooltip="Choose the browser voice used for speech playback."
-                  microsoftOnlyTooltip="Show only voices whose name or URI appears to be Microsoft-provided."
+                  languageTooltip="Filter playback voices by base language. English includes every en-* voice, regardless of country."
                 />
 
                 <div className="diagnostics-panel">

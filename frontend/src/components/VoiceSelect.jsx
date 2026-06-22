@@ -1,37 +1,55 @@
 import { useMemo } from 'react'
 import {
   describeLang,
+  getVoiceBaseLanguage,
   getVoiceBucket,
   getVoiceDiagnostic,
   getVoiceKey,
   groupVoices,
   isKnownWorkingVoice,
-  isMicrosoftVoice,
 } from '../utils/voices'
 
 export default function VoiceSelect({
   voices,
   value,
   onChange,
-  microsoftOnly,
-  onToggleMicrosoftOnly,
+  voiceLanguage,
+  onVoiceLanguageChange,
   diagnostics = {},
   tooltip,
-  microsoftOnlyTooltip,
+  languageTooltip,
 }) {
+  const languageOptions = useMemo(() => {
+    const counts = new Map()
+    for (const voice of voices) {
+      const key = getVoiceBaseLanguage(voice)
+      counts.set(key, (counts.get(key) || 0) + 1)
+    }
+
+    return [...counts.entries()]
+      .map(([baseLang, count]) => ({
+        count,
+        lang: baseLang,
+        label:
+          baseLang === 'unknown' ? 'Unknown language' : describeLang(baseLang),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [voices])
+
   const filtered = useMemo(
-    () => (microsoftOnly ? voices.filter(isMicrosoftVoice) : voices),
-    [voices, microsoftOnly],
+    () =>
+      voices.filter(
+        (voice) =>
+          voiceLanguage === 'all' ||
+          getVoiceBaseLanguage(voice) === voiceLanguage,
+      ),
+    [voiceLanguage, voices],
   )
 
   const groups = useMemo(() => groupVoices(filtered, diagnostics), [
     diagnostics,
     filtered,
   ])
-  const microsoftCount = useMemo(
-    () => voices.filter(isMicrosoftVoice).length,
-    [voices],
-  )
   const bucketCounts = useMemo(
     () =>
       filtered.reduce(
@@ -44,35 +62,76 @@ export default function VoiceSelect({
     [diagnostics, filtered],
   )
 
+  const getVisibleVoices = (nextLanguage) =>
+    voices.filter(
+      (voice) =>
+        nextLanguage === 'all' ||
+        getVoiceBaseLanguage(voice) === nextLanguage,
+    )
+
+  const keepVisibleVoiceSelected = (nextVoices) => {
+    const currentVoiceStillVisible = nextVoices.some(
+      (voice) => voice.voiceURI === value,
+    )
+
+    if (!currentVoiceStillVisible && nextVoices[0]) {
+      onChange(nextVoices[0].voiceURI)
+    }
+  }
+
+  const handleLanguageChange = (nextLanguage) => {
+    onVoiceLanguageChange(nextLanguage)
+    keepVisibleVoiceSelected(getVisibleVoices(nextLanguage))
+  }
+
+  const visibleVoiceSelected = filtered.some((voice) => voice.voiceURI === value)
+  const selectValue = visibleVoiceSelected ? value || '' : ''
+
   return (
     <div className="field">
       <div className="field-header">
         <label htmlFor="voice" data-tooltip={tooltip}>
           Voice
         </label>
-        <label className="toggle-row compact" data-tooltip={microsoftOnlyTooltip}>
-          <input
-            type="checkbox"
-            checked={microsoftOnly}
-            onChange={(event) => onToggleMicrosoftOnly(event.target.checked)}
-          />
-          <span>Microsoft only</span>
-          <span className="muted">({microsoftCount})</span>
+      </div>
+
+      <div className="voice-language-field">
+        <label htmlFor="voice-language" data-tooltip={languageTooltip}>
+          Language
         </label>
+        <div className="select-wrap compact-select">
+          <select
+            id="voice-language"
+            value={voiceLanguage}
+            onChange={(event) => handleLanguageChange(event.target.value)}
+            disabled={!voices.length}
+          >
+            <option value="all">All languages ({voices.length})</option>
+            {languageOptions.map((item) => (
+              <option key={item.lang} value={item.lang}>
+                {item.label} ({item.lang}-*, {item.count})
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       <p className="field-note">
-        {bucketCounts.confirmed} confirmed, {bucketCounts.likely} likely,{' '}
-        {bucketCounts.untested} untested, {bucketCounts.failed} failed/timed out.
+        Showing {filtered.length} voices: {bucketCounts.confirmed} confirmed,{' '}
+        {bucketCounts.likely} likely, {bucketCounts.untested} untested,{' '}
+        {bucketCounts.failed} failed/timed out.
       </p>
 
       <div className="select-wrap">
         <select
           id="voice"
-          value={value || ''}
+          value={selectValue}
           onChange={(event) => onChange(event.target.value)}
-          disabled={!voices.length}
+          disabled={!voices.length || !filtered.length}
         >
           {!voices.length && <option>Loading voices...</option>}
+          {voices.length > 0 && !filtered.length && (
+            <option>No voices match these filters</option>
+          )}
           {groups.map((group) => (
             <optgroup
               key={group.label}

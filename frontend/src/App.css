@@ -542,6 +542,13 @@
   line-height: 1.35;
 }
 
+.voice-language-field {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 8px;
+  min-width: 0;
+}
+
 .select-wrap {
   position: relative;
 }
@@ -576,6 +583,11 @@ select {
 select:focus {
   border-color: rgba(36, 124, 112, 0.58);
   box-shadow: 0 0 0 3px rgba(36, 124, 112, 0.13);
+}
+
+.compact-select select {
+  min-height: 38px;
+  font-size: 13px;
 }
 
 optgroup {

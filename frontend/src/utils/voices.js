@@ -46,6 +46,10 @@ export function getVoiceKey(voice) {
   ].join('|')
 }
 
+export function getVoiceBaseLanguage(voice) {
+  return (voice.lang || 'unknown').split('-')[0].toLowerCase() || 'unknown'
+}
+
 export function getVoiceDiagnostic(voice, diagnostics = {}) {
   return diagnostics[getVoiceKey(voice)] || null
 }
